@@ -85,6 +85,10 @@ Before signing:
   — fee_limit;
   — You must type YES to confirm.
 
+Risk: the review text comes from JSON raw_data; txID and the signature bind only to raw_data_hex.
+This tool does not prove they match—use a trusted unsigned tx file or decode raw_data_hex elsewhere
+and compare before YES.
+
 Mnemonic: from file only (--mnemonic-file); file content is not logged. BIP39 passphrase
   is prompted the same way as generate-wallet.secure.js.
 
@@ -148,6 +152,9 @@ async function main() {
 	console.error(formatHumanSummary(tx.raw_data));
 	console.error("\ntxID (bound to raw_data_hex):", String(tx.txID).replace(/^0x/i, ""));
 	console.error("---\n");
+	console.error(
+		"Warning: summary is from raw_data JSON; signature binds only to raw_data_hex. If unsure, verify hex independently.\n",
+	);
 
 	const answer = await readLine('Type YES to sign (or press Enter to cancel): ');
 	if (answer !== "YES") {

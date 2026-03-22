@@ -43,6 +43,12 @@ const api = require("./src/index.js");
 
 Runs **offline** by design: no RPC calls in the wallet/signing path. Protect the machine, the mnemonic, and any file you pass to `--mnemonic-file`. Review transaction details before confirming signature. Dependencies should be installed from a trusted lockfile; for integrity of copied trees, use the manifest workflow above.
 
+### Unsigned transaction JSON: `raw_data` vs `raw_data_hex`
+
+**`txID` and the signature depend only on `raw_data_hex`** (the tool checks `txID === SHA256(raw_data_hex)` and signs that hash). The human-readable review (amounts, recipients, fee, owner checks) is built from the **`raw_data`** object in the same JSON file. This tool does **not** verify that `raw_data` serializes to the same bytes as `raw_data_hex`.
+
+If a file were tampered with or corrupted, the on-screen summary could disagree with what you actually sign. Treat the summary as a **hint**; the **authoritative** payload is `raw_data_hex`. Prefer unsigned transactions from a **trusted** source; if anything is unclear, decode `raw_data_hex` with an independent tool and compare fields before typing `YES`.
+
 ## License
 
 See `package.json` (ISC unless changed).
