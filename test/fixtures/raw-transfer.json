@@ -1,0 +1,15 @@
+{
+  "contract": [
+    {
+      "type": "TransferContract",
+      "parameter": {
+        "value": {
+          "owner_address": "TUJ2YbSDGtCqzRz7quPQidRCMC98jDAPXc",
+          "to_address": "TSeJkUh4Qv67VNFwY8LaAxERygNdy6NQZK",
+          "amount": 2000000
+        }
+      }
+    }
+  ],
+  "fee_limit": 50000000
+}

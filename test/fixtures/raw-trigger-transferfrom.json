@@ -1,0 +1,14 @@
+{
+  "contract": [
+    {
+      "type": "TriggerSmartContract",
+      "parameter": {
+        "value": {
+          "owner_address": "TUJ2YbSDGtCqzRz7quPQidRCMC98jDAPXc",
+          "contract_address": "TSeJkUh4Qv67VNFwY8LaAxERygNdy6NQZK",
+          "data": "0x23b872dd000000000000000000000000c901705cc4cbfdecf051f779d0de8b22759dd260000000000000000000000000b6e708a39781c96bd399c7657780ff9fe9f052a800000000000000000000000000000000000000000000000000000000000003e8"
+        }
+      }
+    }
+  ]
+}

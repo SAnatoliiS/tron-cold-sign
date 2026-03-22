@@ -1,0 +1,16 @@
+{
+  "contract": [
+    {
+      "type": "TriggerSmartContract",
+      "parameter": {
+        "value": {
+          "owner_address": "TUJ2YbSDGtCqzRz7quPQidRCMC98jDAPXc",
+          "contract_address": "TSeJkUh4Qv67VNFwY8LaAxERygNdy6NQZK",
+          "call_value": 0,
+          "data": "0xa9059cbb000000000000000000000000b6e708a39781c96bd399c7657780ff9fe9f052a800000000000000000000000000000000000000000000000000000000000003e8"
+        }
+      }
+    }
+  ],
+  "fee_limit": 100000000
+}
