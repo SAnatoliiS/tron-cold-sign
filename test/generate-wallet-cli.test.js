@@ -5,6 +5,8 @@ jest.mock("../src/cli/passphrase.js", () => ({
 }));
 
 const assert = require("node:assert");
+const fs = require("node:fs");
+const os = require("node:os");
 const path = require("path");
 const { spawnSync } = require("node:child_process");
 const {
@@ -32,15 +34,15 @@ describe("parseArgs", () => {
 			"--json",
 			"--entropy-bits",
 			"128",
-			"--from-mnemonic",
-			"word word",
+			"--mnemonic-file",
+			"/tmp/seed.txt",
 			"--expect-address",
 			"TTest",
 		]);
 		assert.strictEqual(o.printSecrets, true);
 		assert.strictEqual(o.json, true);
 		assert.strictEqual(o.entropyBits, 128);
-		assert.strictEqual(o.fromMnemonic, "word word");
+		assert.strictEqual(o.mnemonicFile, "/tmp/seed.txt");
 		assert.strictEqual(o.expectAddress, "TTest");
 	});
 
@@ -50,8 +52,8 @@ describe("parseArgs", () => {
 				parseArgs([
 					"node",
 					"x",
-					"--from-mnemonic",
-					"legal winner",
+					"--mnemonic-file",
+					"/tmp/m.txt",
 					"--expect-address",
 				]),
 			/Base58 address/,
@@ -69,7 +71,7 @@ describe("printHelp", () => {
 			printHelp();
 			const text = lines.join("\n");
 			assert.match(text, /generate-wallet\.secure\.js/);
-			assert.match(text, /--from-mnemonic/);
+			assert.match(text, /--mnemonic-file/);
 		} finally {
 			spy.mockRestore();
 		}
@@ -165,42 +167,52 @@ describe("main", () => {
 		assert.strictEqual(code, 0);
 	});
 
-	test("--expect-address without --from-mnemonic throws", async () => {
+	test("--expect-address without --mnemonic-file throws", async () => {
 		process.argv = ["node", "x", "--expect-address", GOLDEN_TRON_ADDRESS];
 		await assert.rejects(main(), (e) => e instanceof CliError);
 	});
 
 	test("verify flow with matching address", async () => {
-		const errLines = [];
-		console.error = (...a) => {
-			errLines.push(a.join(" "));
-		};
-		process.argv = [
-			"node",
-			"x",
-			"--from-mnemonic",
-			TEST_MNEMONIC,
-			"--expect-address",
-			GOLDEN_TRON_ADDRESS,
-		];
-		const code = await main();
-		assert.strictEqual(code, 0);
-		assert.ok(errLines.some((l) => /Address matches/.test(l)));
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gw-mn-"));
+		try {
+			const mPath = path.join(tmpDir, "m.txt");
+			fs.writeFileSync(mPath, TEST_MNEMONIC, "utf8");
+			const errLines = [];
+			console.error = (...a) => {
+				errLines.push(a.join(" "));
+			};
+			process.argv = [
+				"node",
+				"x",
+				"--mnemonic-file",
+				mPath,
+				"--expect-address",
+				GOLDEN_TRON_ADDRESS,
+			];
+			const code = await main();
+			assert.strictEqual(code, 0);
+			assert.ok(errLines.some((l) => /Address matches/.test(l)));
+		} finally {
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		}
 	});
 
 	test("verify flow address mismatch", async () => {
 		const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gw-mn-"));
 		try {
 			const other = deriveWalletFromMnemonic(
 				TEST_MNEMONIC,
 				"",
 				"m/44'/195'/0'/0/1",
 			);
+			const mPath = path.join(tmpDir, "m.txt");
+			fs.writeFileSync(mPath, TEST_MNEMONIC, "utf8");
 			process.argv = [
 				"node",
 				"x",
-				"--from-mnemonic",
-				TEST_MNEMONIC,
+				"--mnemonic-file",
+				mPath,
 				"--expect-address",
 				other.address,
 			];
@@ -210,40 +222,55 @@ describe("main", () => {
 			);
 		} finally {
 			errSpy.mockRestore();
+			fs.rmSync(tmpDir, { recursive: true, force: true });
 		}
 	});
 
 	test("print-secrets warns on stderr", async () => {
-		const errLines = [];
-		console.error = (...a) => {
-			errLines.push(a.join(" "));
-		};
-		process.argv = [
-			"node",
-			"x",
-			"--from-mnemonic",
-			TEST_MNEMONIC,
-			"--expect-address",
-			GOLDEN_TRON_ADDRESS,
-			"--print-secrets",
-		];
-		await main();
-		assert.ok(errLines.some((l) => /WARNING.*print-secrets/.test(l)));
+		const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gw-mn-"));
+		try {
+			const mPath = path.join(tmpDir, "m.txt");
+			fs.writeFileSync(mPath, TEST_MNEMONIC, "utf8");
+			const errLines = [];
+			console.error = (...a) => {
+				errLines.push(a.join(" "));
+			};
+			process.argv = [
+				"node",
+				"x",
+				"--mnemonic-file",
+				mPath,
+				"--expect-address",
+				GOLDEN_TRON_ADDRESS,
+				"--print-secrets",
+			];
+			await main();
+			assert.ok(errLines.some((l) => /WARNING.*print-secrets/.test(l)));
+		} finally {
+			fs.rmSync(tmpDir, { recursive: true, force: true });
+		}
 	});
 });
 
 test("integration: generate-wallet.secure.js verify via subprocess", () => {
-	const r = spawnSync(
-		process.execPath,
-		[
-			path.join(repoRoot, "generate-wallet.secure.js"),
-			"--from-mnemonic",
-			TEST_MNEMONIC,
-			"--expect-address",
-			GOLDEN_TRON_ADDRESS,
-		],
-		{ cwd: repoRoot, encoding: "utf8", input: "\n" },
-	);
-	assert.strictEqual(r.status, 0, r.stderr);
-	assert.match(r.stdout, /TUJ2YbSDGtCqzRz7quPQidRCMC98jDAPXc/);
+	const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gw-int-"));
+	try {
+		const mPath = path.join(tmpDir, "seed.txt");
+		fs.writeFileSync(mPath, TEST_MNEMONIC, "utf8");
+		const r = spawnSync(
+			process.execPath,
+			[
+				path.join(repoRoot, "generate-wallet.secure.js"),
+				"--mnemonic-file",
+				mPath,
+				"--expect-address",
+				GOLDEN_TRON_ADDRESS,
+			],
+			{ cwd: repoRoot, encoding: "utf8", input: "\n" },
+		);
+		assert.strictEqual(r.status, 0, r.stderr);
+		assert.match(r.stdout, /TUJ2YbSDGtCqzRz7quPQidRCMC98jDAPXc/);
+	} finally {
+		fs.rmSync(tmpDir, { recursive: true, force: true });
+	}
 });

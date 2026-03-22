@@ -10,6 +10,7 @@
  * - Bundle: npm run build → dist/bundle.js. Curve: @noble/secp256k1 (pure JS).
  */
 
+const fs = require("fs");
 const { CliError } = require("./errors.js");
 const { TRON_DERIVATION_PATH } = require("../tron/constants.js");
 const {
@@ -22,13 +23,19 @@ const {
 } = require("../wallet/derive.js");
 const { readPassphraseInteractive } = require("./passphrase.js");
 
+function readMnemonicFromFile(filePath) {
+	const p = String(filePath).trim();
+	const data = fs.readFileSync(p, "utf8");
+	return data.trim().replace(/\s+/g, " ");
+}
+
 function parseArgs(argv) {
 	const opts = {
 		entropyBits: 256,
 		printSecrets: false,
 		json: false,
 		help: false,
-		fromMnemonic: null,
+		mnemonicFile: null,
 		expectAddress: null,
 	};
 
@@ -45,11 +52,11 @@ function parseArgs(argv) {
 			if (v === undefined)
 				throw new CliError("Expected value after --entropy-bits");
 			opts.entropyBits = parseInt(v, 10);
-		} else if (a === "--from-mnemonic") {
+		} else if (a === "--mnemonic-file") {
 			const v = argv[++i];
 			if (v === undefined)
-				throw new CliError("Expected mnemonic after --from-mnemonic");
-			opts.fromMnemonic = v;
+				throw new CliError("Expected path after --mnemonic-file");
+			opts.mnemonicFile = v;
 		} else if (a === "--expect-address") {
 			const v = argv[++i];
 			if (v === undefined)
@@ -72,19 +79,21 @@ Usage: node generate-wallet.secure.js [options]
 
   A BIP39 passphrase is requested before derivation (hidden input); empty = none.
 
+  Mnemonic is never read from the command line (visible in process list). Use --mnemonic-file only.
+
 Options:
   --entropy-bits <N>      Entropy: 128, 160, 192, 224, or 256 (default 256).
   --print-secrets         Print mnemonic and private key hex to stdout.
   --json                  JSON output.
-  --from-mnemonic <words> Verify mode: derive from existing mnemonic (no generation).
-  --expect-address <T>    With --from-mnemonic: require matching Base58 address (0x41 prefix); else exit 1.
+  --mnemonic-file <file>  Verify mode: derive from mnemonic in file (no generation).
+  --expect-address <T>    With --mnemonic-file: require matching Base58 address (0x41 prefix); else exit 1.
   --help, -h              This help.
 
 Public fields (always): Base58 address, hex address (0x41…), derivation path ${TRON_DERIVATION_PATH}.
 
 Examples:
   node generate-wallet.secure.js --print-secrets
-  node generate-wallet.secure.js --from-mnemonic "legal winner thank year ... yellow" --expect-address T...
+  node generate-wallet.secure.js --mnemonic-file seed.txt --expect-address T...
 `);
 }
 
@@ -141,12 +150,12 @@ async function main() {
 		return 0;
 	}
 
-	if (opts.expectAddress !== null && opts.fromMnemonic === null) {
-		throw new CliError("--expect-address requires --from-mnemonic");
+	if (opts.expectAddress !== null && opts.mnemonicFile === null) {
+		throw new CliError("--expect-address requires --mnemonic-file");
 	}
 
 	let expectAddressCanonical = null;
-	if (opts.fromMnemonic !== null && opts.expectAddress !== null) {
+	if (opts.mnemonicFile !== null && opts.expectAddress !== null) {
 		const raw = decodeTronAddressBase58Checked(opts.expectAddress);
 		expectAddressCanonical = encodeTronBase58CheckPayload(raw);
 	}
@@ -159,8 +168,16 @@ async function main() {
 
 	const passphrase = await readPassphraseInteractive();
 
-	if (opts.fromMnemonic) {
-		const wallet = deriveWalletFromMnemonic(opts.fromMnemonic, passphrase);
+	if (opts.mnemonicFile) {
+		let mnemonic;
+		try {
+			mnemonic = readMnemonicFromFile(opts.mnemonicFile);
+		} catch (e) {
+			throw new CliError(
+				"Failed to read --mnemonic-file: " + String(e.message || e),
+			);
+		}
+		const wallet = deriveWalletFromMnemonic(mnemonic, passphrase);
 
 		if (
 			expectAddressCanonical !== null &&
@@ -211,4 +228,5 @@ module.exports = {
 	outputWallet,
 	main,
 	runCli,
+	readMnemonicFromFile,
 };

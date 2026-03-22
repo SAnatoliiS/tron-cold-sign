@@ -47,6 +47,52 @@ function buildUnsignedTx() {
 	};
 }
 
+/** Valid binding; unknown contract type so summary does not validate owner_address. */
+function buildUnsignedTxNoOwnerField() {
+	const rawHex = "bb".repeat(32);
+	const txID = Buffer.from(sha256(Buffer.from(rawHex, "hex"))).toString(
+		"hex",
+	);
+	return {
+		txID,
+		raw_data_hex: rawHex,
+		raw_data: {
+			contract: [
+				{
+					type: "CustomContract",
+					parameter: {
+						value: {},
+					},
+				},
+			],
+			fee_limit: 10,
+		},
+	};
+}
+
+/** Valid binding; unparsed contract type with invalid owner_address (must fail at sign). */
+function buildUnsignedTxInvalidOwner() {
+	const rawHex = "ee".repeat(32);
+	const txID = Buffer.from(sha256(Buffer.from(rawHex, "hex"))).toString(
+		"hex",
+	);
+	return {
+		txID,
+		raw_data_hex: rawHex,
+		raw_data: {
+			contract: [
+				{
+					type: "WeirdType",
+					parameter: {
+						value: { owner_address: "not-a-tron-address" },
+					},
+				},
+			],
+			fee_limit: 10,
+		},
+	};
+}
+
 describe("parseArgs", () => {
 	test("parses tx, mnemonic, derivation path, json", () => {
 		const o = parseArgs([
@@ -187,6 +233,44 @@ describe("main", () => {
 		await assert.rejects(
 			main(),
 			(e) => e instanceof CliError && e.exitCode === 2,
+		);
+	});
+
+	test("refuses when no contract has owner_address to verify", async () => {
+		const txPath = path.join(tmpDir, "tx.json");
+		fs.writeFileSync(
+			txPath,
+			JSON.stringify(buildUnsignedTxNoOwnerField()),
+			"utf8",
+		);
+		const mPath = path.join(tmpDir, "m.txt");
+		fs.writeFileSync(mPath, TEST_MNEMONIC, "utf8");
+		process.argv = ["node", "x", "--tx", txPath, "--mnemonic-file", mPath];
+		await assert.rejects(
+			main(),
+			(e) =>
+				e instanceof CliError &&
+				e.exitCode === 1 &&
+				/no contract with a valid owner_address/i.test(e.message),
+		);
+	});
+
+	test("refuses invalid owner_address on unparsed contract", async () => {
+		const txPath = path.join(tmpDir, "tx.json");
+		fs.writeFileSync(
+			txPath,
+			JSON.stringify(buildUnsignedTxInvalidOwner()),
+			"utf8",
+		);
+		const mPath = path.join(tmpDir, "m.txt");
+		fs.writeFileSync(mPath, TEST_MNEMONIC, "utf8");
+		process.argv = ["node", "x", "--tx", txPath, "--mnemonic-file", mPath];
+		await assert.rejects(
+			main(),
+			(e) =>
+				e instanceof CliError &&
+				e.exitCode === 1 &&
+				/invalid owner_address/i.test(e.message),
 		);
 	});
 });

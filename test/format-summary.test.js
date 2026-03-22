@@ -34,8 +34,28 @@ test("formatHumanSummary TransferContract invalid amount", () => {
 					},
 				],
 			}),
-		/invalid amount/,
+		/TransferContract amount: invalid amount/,
 	);
+});
+
+test("formatHumanSummary TransferContract large SUN as decimal string", () => {
+	const bigSun = "90071992547409930000000";
+	const summary = formatHumanSummary({
+		contract: [
+			{
+				type: "TransferContract",
+				parameter: {
+					value: {
+						owner_address: GOLDEN_TRON_ADDRESS,
+						to_address: GOLDEN_TRON_ADDRESS,
+						amount: bigSun,
+					},
+				},
+			},
+		],
+	});
+	assert.ok(summary.includes(bigSun));
+	assert.match(summary, /Amount:/);
 });
 
 test("formatHumanSummary TriggerSmartContract with call_value and unknown calldata", () => {

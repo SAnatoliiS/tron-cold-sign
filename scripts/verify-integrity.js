@@ -32,6 +32,16 @@ function parseManifest(content) {
 	return entries;
 }
 
+/** Reject paths that escape ROOT (traversal or absolute paths in manifest). */
+function resolveUnderRoot(rel) {
+	const resolved = path.resolve(ROOT, rel);
+	const relFromRoot = path.relative(ROOT, resolved);
+	if (relFromRoot.startsWith("..") || path.isAbsolute(relFromRoot)) {
+		throw new Error(`Invalid manifest path (outside project root): ${rel}`);
+	}
+	return resolved;
+}
+
 function main() {
 	if (!fs.existsSync(MANIFEST)) {
 		console.error(`verify-integrity: missing file ${MANIFEST}`);
@@ -50,7 +60,14 @@ function main() {
 
 	let ok = true;
 	for (const { hash: expected, rel } of entries) {
-		const abs = path.join(ROOT, rel);
+		let abs;
+		try {
+			abs = resolveUnderRoot(rel);
+		} catch (e) {
+			console.error(String(e.message || e));
+			ok = false;
+			continue;
+		}
 		if (!fs.existsSync(abs)) {
 			console.error(`MISSING  ${rel}`);
 			ok = false;

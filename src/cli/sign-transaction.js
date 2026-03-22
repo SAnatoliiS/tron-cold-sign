@@ -172,6 +172,7 @@ async function main() {
 	);
 
 	const contracts = tx.raw_data.contract || [];
+	let ownerChecks = 0;
 	for (let i = 0; i < contracts.length; i++) {
 		const val = contracts[i].parameter && contracts[i].parameter.value;
 		if (!val || val.owner_address == null) {
@@ -180,15 +181,25 @@ async function main() {
 		let ownerExpected;
 		try {
 			ownerExpected = normalizeTronAddress(val.owner_address, "owner_address");
-		} catch {
-			continue;
+		} catch (e) {
+			throw new CliError(
+				`Contract #${i + 1}: invalid owner_address — ${e.message || e}`,
+				1,
+			);
 		}
+		ownerChecks += 1;
 		if (ownerExpected !== wallet.address) {
 			console.error("Error: derived address does not match contract owner.");
 			console.error(`  Contract #${i + 1}: expected owner_address`, ownerExpected);
 			console.error("  Wallet (derive):              ", wallet.address);
 			throw new CliError("", 1);
 		}
+	}
+	if (ownerChecks === 0) {
+		throw new CliError(
+			"No contract with a valid owner_address to verify against your wallet — signing refused.",
+			1,
+		);
 	}
 
 	if (Array.isArray(tx.signature) && tx.signature.length > 0) {

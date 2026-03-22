@@ -3,7 +3,10 @@
 const assert = require("node:assert");
 const { sha256 } = require("@noble/hashes/sha2.js");
 const { signTronTxId } = require("../src/tron/transaction/sign-tron-tx-id.js");
-const { verifyTxIdBinding } = require("../src/tron/transaction/verify-tx-id.js");
+const {
+	verifyTxIdBinding,
+	MAX_RAW_DATA_HEX_LENGTH,
+} = require("../src/tron/transaction/verify-tx-id.js");
 const { parseTrc20CallData } = require("../src/tron/transaction/parse-trc20.js");
 
 test("verifyTxIdBinding accepts matching txID and raw_data_hex", () => {
@@ -46,6 +49,40 @@ test("verifyTxIdBinding rejects invalid txID length", () => {
 	);
 });
 
+test("verifyTxIdBinding rejects odd-length raw_data_hex", () => {
+	assert.throws(
+		() =>
+			verifyTxIdBinding({
+				raw_data_hex: "a".repeat(65),
+				txID: "00".repeat(32),
+			}),
+		/even-length hex/,
+	);
+});
+
+test("verifyTxIdBinding rejects non-hex in raw_data_hex", () => {
+	assert.throws(
+		() =>
+			verifyTxIdBinding({
+				raw_data_hex: "gg" + "aa".repeat(31),
+				txID: "00".repeat(32),
+			}),
+		/only hexadecimal/,
+	);
+});
+
+test("verifyTxIdBinding rejects oversized raw_data_hex", () => {
+	const huge = "aa".repeat((MAX_RAW_DATA_HEX_LENGTH + 2) / 2);
+	assert.throws(
+		() =>
+			verifyTxIdBinding({
+				raw_data_hex: huge,
+				txID: "00".repeat(32),
+			}),
+		/too long/,
+	);
+});
+
 test("signTronTxId is deterministic for fixed key and txID", () => {
 	const txId = "aa".repeat(32);
 	const pk = Buffer.alloc(32, 7);
@@ -59,6 +96,13 @@ test("signTronTxId rejects non-32-byte txID hex", () => {
 	assert.throws(
 		() => signTronTxId("abcd", Buffer.alloc(32, 1)),
 		/32 bytes/,
+	);
+});
+
+test("signTronTxId rejects non-32-byte private key", () => {
+	assert.throws(
+		() => signTronTxId("aa".repeat(32), Buffer.alloc(31, 1)),
+		/32-byte Buffer/,
 	);
 });
 
