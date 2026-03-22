@@ -216,9 +216,12 @@ async function main() {
 	}
 
 	const priv = Buffer.from(wallet.privateKeyHex, "hex");
-	const sigHex = signTronTxId(tx.txID, priv);
-
-	priv.fill(0);
+	let sigHex;
+	try {
+		sigHex = signTronTxId(tx.txID, priv);
+	} finally {
+		priv.fill(0);
+	}
 
 	const signed = { ...tx, signature: [sigHex] };
 

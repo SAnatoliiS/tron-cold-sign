@@ -92,10 +92,18 @@ test("signTronTxId is deterministic for fixed key and txID", () => {
 	assert.strictEqual(s1.length, 64 + 64 + 2);
 });
 
-test("signTronTxId rejects non-32-byte txID hex", () => {
+test("signTronTxId rejects too short txID hex", () => {
 	assert.throws(
 		() => signTronTxId("abcd", Buffer.alloc(32, 1)),
-		/32 bytes/,
+		/no valid txID/,
+	);
+});
+
+test("signTronTxId rejects non-hex in txID", () => {
+	const badTxId = "gg" + "aa".repeat(31);
+	assert.throws(
+		() => signTronTxId(badTxId, Buffer.alloc(32, 1)),
+		/only hexadecimal/,
 	);
 });
 

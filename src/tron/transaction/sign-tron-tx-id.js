@@ -7,6 +7,7 @@
 const secp = require("@noble/secp256k1");
 const { hmac } = require("@noble/hashes/hmac.js");
 const { sha256 } = require("@noble/hashes/sha2.js");
+const { parseStrictHex } = require("./verify-tx-id.js");
 
 secp.hashes.hmacSha256 = (key, msg) => hmac(sha256, key, msg);
 secp.hashes.sha256 = sha256;
@@ -20,11 +21,7 @@ function signTronTxId(txIdHex, privateKey) {
 	if (!Buffer.isBuffer(privateKey) || privateKey.length !== 32) {
 		throw new Error("privateKey must be a 32-byte Buffer");
 	}
-	const clean = String(txIdHex).replace(/^0x/i, "");
-	if (clean.length !== 64) {
-		throw new Error("txID must be 32 bytes (64 hex characters)");
-	}
-	const msgHash = Buffer.from(clean, "hex");
+	const msgHash = parseStrictHex("txID", String(txIdHex), 32);
 	const sig65 = secp.sign(new Uint8Array(msgHash), new Uint8Array(privateKey), {
 		prehash: false,
 		format: "recovered",
