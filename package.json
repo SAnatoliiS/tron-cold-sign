@@ -22,6 +22,7 @@
     "test:coverage": "jest --coverage",
     "test:all": "jest && node scripts/verify-derivation.js",
     "test:client": "npm run test --workspace=tron-cold-sign-client",
+    "test:coverage:client": "npm run test:coverage --workspace=tron-cold-sign-client",
     "ci": "npm ci"
   },
   "keywords": [],

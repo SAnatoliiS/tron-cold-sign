@@ -6,7 +6,7 @@ Offline tools for a **TRON** HD wallet ([BIP39](https://github.com/bitcoin/bips/
 
 Monorepo **`workspaces`**: **`packages/core`**, **`client`**.
 
-- **`packages/core`** (`@tron-cold-sign/core`) — wallet / TRON / signing logic (TypeScript). Built with **`tsup`** to **`dist/`**: `index.js` (CJS for Node), `index.mjs` (ESM for Vite), `index.d.ts` (types). No separate esbuild step at the repo root.
+- **`packages/core`** (`@tron-cold-sign/core`) — wallet / TRON / signing logic (TypeScript). Built with **`tsup`** to **`dist/`**: `index.js` (CJS for Node), `index.mjs` (ESM for Vite), `index.d.ts` (types). The **`core`** package does not use the root **`npm run build`** (that command is a separate optional **esbuild** bundle of the wallet CLI → `dist/bundle.js`).
 - **`cli/`** — Node CLIs (`generate-wallet`, `sign-transaction`, interactive passphrase).
 - **`client/`** — Vite + React UI (`tron-cold-sign-client` workspace). Depends on **`@tron-cold-sign/core`** as **`"*"`** (в режиме workspaces npm подставляет локальный `packages/core`; то же можно записать как **`workspace:*`**, если ваш `npm install` принимает этот протокол — npm 7.14+). Static build: `client/dist/` (open offline or host as static files).
 - **`generate-wallet.secure.js`**, **`sign-transaction.secure.js`** — thin entrypoints at the repo root.
@@ -59,6 +59,7 @@ Installs the root package and workspaces (hoisted `node_modules` at the repo roo
 | `npm run dev:client` | Watch `core` + Vite dev server for the React UI (`client/`). |
 | `npm run build:client` | Production static build → `client/dist/` (runs `build:core` via client `prebuild`). |
 | `npm run test:client` | Vitest for `client/` (runs `build:core` via client `pretest`). |
+| `npm run test:coverage:client` | Vitest with coverage for `client/src` (builds `core` first); reports under `client/coverage/`. |
 | `npm test` | Jest unit tests (`pretest` builds `core` first). |
 | `npm run test:coverage` | `jest --coverage` — line coverage for `packages/core` and `cli/` (see terminal summary and `coverage/`). |
 | `npm run verify` | Compare derived address with TronWeb on a fixed test mnemonic (no live network call required for the check). |
