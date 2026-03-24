@@ -5,7 +5,7 @@ alwaysApply: true
 
 Контекст: оффлайн генерация TRON кошелька (TRC20) и статический оффлайн-сайт для генерации/подписи транзакций.
 
-Структура репозитория: **`lib/`** — общая крипто/TRON логика (Node + браузер); **`cli/`** — только Node CLI; **`client/`** — сюда добавляется React/Vite, импорт из `lib/` через alias в `vite.config` (см. README).
+Структура репозитория: **`lib/`** — общая крипто/TRON логика (Node: CommonJS `lib/index.js`); **`scripts/build-lib-esm.mjs`** — esbuild-бандл в **`dist/tron-lib-esm.mjs`** (ESM для браузера, `npm run build:lib`; корневые `dev:client` / `build:client` / `test:client` вызывают его); корневой **`package.json`** `exports`: `import` → ESM в `dist/`, `require` → `lib/index.js`. **`client/`** — workspace `tron-cold-sign-client` (React/Vite): `offlineApi.ts` импортирует пакет **`tron-cold-sign`**, типы — **`types/tron-cold-sign.d.ts`**. Полифилл **`buffer`** — `client/src/buffer-polyfill.ts`.
 
 🎯 Цель
 

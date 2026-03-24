@@ -1,18 +1,35 @@
 {
-  "name": "tronoffline",
+  "name": "tron-cold-sign",
   "version": "1.0.0",
+  "private": true,
   "description": "",
   "main": "lib/index.js",
+  "types": "./types/tron-cold-sign.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types/tron-cold-sign.d.ts",
+      "import": "./dist/tron-lib-esm.mjs",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    }
+  },
+  "workspaces": [
+    "client"
+  ],
   "scripts": {
     "generate": "node generate-wallet.secure.js",
     "sign-tx": "node sign-transaction.secure.js",
     "verify": "node scripts/verify-derivation.js",
     "integrity:write": "node scripts/generate-integrity-manifest.js --write",
     "integrity:check": "node scripts/verify-integrity.js",
+    "build:lib": "node scripts/build-lib-esm.mjs",
     "build": "esbuild cli/generate-wallet.js --bundle --platform=node --outfile=dist/bundle.js",
+    "build:client": "npm run build:lib && npm run build --workspace=tron-cold-sign-client",
+    "dev:client": "npm run build:lib && npm run dev --workspace=tron-cold-sign-client",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:all": "jest && node scripts/verify-derivation.js",
+    "test:client": "npm run build:lib && npm run test --workspace=tron-cold-sign-client",
     "ci": "npm ci"
   },
   "keywords": [],

@@ -37,6 +37,33 @@ function walkJs(relDir) {
 	return out;
 }
 
+/** Like walkJs but multiple extensions; skips node_modules / dist. */
+function walkSource(relDir, exts) {
+	const out = [];
+	const skipDir = new Set(["node_modules", "dist", ".git"]);
+	const base = path.join(ROOT, relDir);
+	if (!fs.existsSync(base)) {
+		return out;
+	}
+	function walk(dir, prefix) {
+		for (const name of fs.readdirSync(dir).sort()) {
+			if (skipDir.has(name)) {
+				continue;
+			}
+			const full = path.join(dir, name);
+			const rel = path.join(prefix, name).replace(/\\/g, "/");
+			const st = fs.statSync(full);
+			if (st.isDirectory()) {
+				walk(full, rel);
+			} else if (exts.some((ext) => name.endsWith(ext))) {
+				out.push(rel);
+			}
+		}
+	}
+	walk(base, relDir);
+	return out;
+}
+
 const TRACKED_FILES = [
 	"generate-wallet.secure.js",
 	"sign-transaction.secure.js",
@@ -48,6 +75,20 @@ const TRACKED_FILES = [
 	...walkJs("lib"),
 	...walkJs("cli"),
 	...walkJs("test"),
+	"client/package.json",
+	"client/index.html",
+	"client/vite.config.ts",
+	"client/vitest.config.ts",
+	"client/tsconfig.json",
+	"client/tsconfig.app.json",
+	"client/tsconfig.node.json",
+	"client/eslint.config.js",
+	"client/postcss.config.js",
+	"client/tailwind.config.ts",
+	"client/components.json",
+	"scripts/build-lib-esm.mjs",
+	"types/tron-cold-sign.d.ts",
+	...walkSource("client/src", [".ts", ".tsx", ".css"]),
 ].sort();
 
 function sha256File(absPath) {

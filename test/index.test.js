@@ -11,4 +11,5 @@ test("public API re-exports expected symbols", () => {
 	assert.strictEqual(typeof api.signTronTxId, "function");
 	assert.strictEqual(typeof api.verifyTxIdBinding, "function");
 	assert.strictEqual(typeof api.parseTrc20CallData, "function");
+	assert.strictEqual(typeof api.buildUiSummaryFromRawData, "function");
 });
