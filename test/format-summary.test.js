@@ -1,13 +1,12 @@
 "use strict";
 
 const assert = require("node:assert");
-const { formatHumanSummary } = require("../lib/tron/transaction/format-summary.js");
-const { SUN } = require("../lib/tron/transaction/constants.js");
+const { formatHumanSummary, SUN } = require("@tron-cold-sign/core");
 const {
 	TEST_MNEMONIC,
 	GOLDEN_TRON_ADDRESS,
 } = require("./test-constants.js");
-const { deriveWalletFromMnemonic } = require("../lib/wallet/derive.js");
+const { deriveWalletFromMnemonic } = require("@tron-cold-sign/core");
 
 test("formatHumanSummary throws when contract missing", () => {
 	assert.throws(

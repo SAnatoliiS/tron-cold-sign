@@ -6,21 +6,15 @@
  * Run: npm run verify (no network required for the check itself; TronWeb is loaded locally).
  */
 
-const bip39 = require("bip39");
-const bip32 = require("bip32");
-const ecc = require("../lib/crypto/ecc-noble.js");
 const { TronWeb } = require("tronweb");
-const { compressedPublicKeyToTronAddress } = require("../lib/tron/address.js");
+const { deriveWalletFromMnemonic } = require("@tron-cold-sign/core");
 
 const TEST_MNEMONIC =
 	"legal winner thank year wave sausage worth useful legal winner thank yellow";
 
-const seed = bip39.mnemonicToSeedSync(TEST_MNEMONIC);
-const root = bip32.BIP32Factory(ecc).fromSeed(seed);
-const child = root.derivePath("m/44'/195'/0'/0/0");
-
-const ours = compressedPublicKeyToTronAddress(child.publicKey);
-const privHex = Buffer.from(child.privateKey).toString("hex");
+const wallet = deriveWalletFromMnemonic(TEST_MNEMONIC, "", "m/44'/195'/0'/0/0");
+const ours = wallet.address;
+const privHex = wallet.privateKeyHex;
 
 const tw = new TronWeb({ fullHost: "https://api.trongrid.io" });
 const reference = tw.address.fromPrivateKey(privHex);
@@ -32,7 +26,7 @@ if (!reference || reference === false) {
 
 if (ours !== reference) {
 	console.error("verify: address mismatch");
-	console.error("  lib/tron/address:", ours);
+	console.error("  @tron-cold-sign/core:", ours);
 	console.error("  tronweb:         ", reference);
 	process.exit(1);
 }

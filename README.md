@@ -1,19 +1,43 @@
 # tron-cold-sign
 
-Offline tools for a **TRON** HD wallet ([BIP39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) / [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki), [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki) coin type **195**, [SLIP-0044](https://github.com/satoshilabs/slips/blob/master/slip-0044.md)) and for **signing unsigned transactions** without contacting the network. Intended for cold / air-gapped use. The long-term UI is a **static offline site** (React/Vite under **`client/`**); **`lib/`** holds shared crypto logic usable from Node or the browser.
+Offline tools for a **TRON** HD wallet ([BIP39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) / [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki), [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki) coin type **195**, [SLIP-0044](https://github.com/satoshilabs/slips/blob/master/slip-0044.md)) and for **signing unsigned transactions** without contacting the network. Intended for cold / air-gapped use. The long-term UI is a **static offline site** (React/Vite under **`client/`**); shared crypto lives in **`packages/core`** (`@tron-cold-sign/core`).
 
 ## Repository layout
 
-- **`lib/`** — wallet / TRON / signing logic (no Node-only APIs); Node loads CommonJS `lib/index.js`. The Vite app imports the workspace package **`tron-cold-sign`**, which resolves to a browser ESM bundle in **`dist/tron-lib-esm.mjs`** (run **`npm run build:lib`** once after clone or when `lib/` changes; root `dev:client` / `build:client` / `test:client` run it automatically).
+Monorepo **`workspaces`**: **`packages/core`**, **`client`**.
+
+- **`packages/core`** (`@tron-cold-sign/core`) — wallet / TRON / signing logic (TypeScript). Built with **`tsup`** to **`dist/`**: `index.js` (CJS for Node), `index.mjs` (ESM for Vite), `index.d.ts` (types). No separate esbuild step at the repo root.
 - **`cli/`** — Node CLIs (`generate-wallet`, `sign-transaction`, interactive passphrase).
-- **`client/`** — Vite + React UI (`tron-cold-sign-client` workspace). Static build: `client/dist/` (open offline or host as static files).
+- **`client/`** — Vite + React UI (`tron-cold-sign-client` workspace). Depends on **`@tron-cold-sign/core`** as **`"*"`** (в режиме workspaces npm подставляет локальный `packages/core`; то же можно записать как **`workspace:*`**, если ваш `npm install` принимает этот протокол — npm 7.14+). Static build: `client/dist/` (open offline or host as static files).
 - **`generate-wallet.secure.js`**, **`sign-transaction.secure.js`** — thin entrypoints at the repo root.
 - **`scripts/`** — integrity manifest and TronWeb regression check (dev-only).
 - **`test/`** — unit tests ([Jest](https://jestjs.io/)); `babel.config.cjs` is only for the test runner (ESM deps such as `@noble/*` / `@scure/*`), not for shipping code.
 
-### Vite and `tron-cold-sign`
+### Build tool choice (`core`)
 
-The client depends on the root package **`tron-cold-sign`**: **`client/package.json`** uses **`"tron-cold-sign": "file:.."`** so the workspace always resolves to this repo (portable across npm versions; **`workspace:*`** also works on npm 7+ if you prefer). The root **`package.json`** `exports` map sends **`import`** to **`dist/tron-lib-esm.mjs`** (built from `lib/` by **`npm run build:lib`**) and **`require`** to **`lib/index.js`**, so Jest/CLI keep using CommonJS unchanged. Types: **`types/tron-cold-sign.d.ts`**. The app loads a **`buffer`** polyfill before other modules (`client/src/buffer-polyfill.ts`).
+**tsup** (esbuild + `dts`) emits dual **CJS + ESM** from one `src/index.ts` entry, plus **`.d.ts`**, without maintaining a separate browser bundle. The client and Node both resolve the same package. In dev, Vite **does not** pre-bundle `@tron-cold-sign/core` (see `client/vite.config.ts` `optimizeDeps.exclude`) so edits to the workspace package are not stuck behind a stale `node_modules/.vite` cache; other deps are still optimized as usual.
+
+### Client workflow (no manual `build:lib`)
+
+- **`npm run dev:client`** (repo root) runs **`concurrently`**: `tsup --watch` in **`packages/core`** and the Vite dev server in **`client/`**.
+- **`npm run build:client`** runs **`vite build`** in the client workspace; the client’s **`prebuild`** runs **`npm run build:core`** so the core package is built before the static bundle.
+- **`npm run test:client`** runs Vitest; the client’s **`pretest`** runs **`build:core`** first.
+- After **`npm install`**, **`packages/core`** runs **`prepare`** → **`npm run build`**, so `dist/` exists for tools that expect a built `core` (first clone / CI).
+
+### Dev: editing `packages/core` (reload / hot)
+
+While **`npm run dev:client`** is running:
+
+1. Saving **`packages/core/src/**/*.ts`** triggers **`tsup --watch`**, which rebuilds **`packages/core/dist/`** (ESM/CJS).
+2. Vite is configured to **watch** the linked package under `node_modules/@tron-cold-sign/core` and to **exclude** it from dependency pre-bundling, so the dev server picks up new `dist` output. Expect a **full reload** (or dependency invalidation), not fine-grained React HMR *inside* the library — that is normal.
+3. If the UI still looks stale after a core change, remove the Vite cache **`client/node_modules/.vite`** and restart the dev server (or run `vite` with `--force` once).
+
+### Imports
+
+- React app: `import … from "@tron-cold-sign/core"` (types from the same package).
+- Node / Jest / CLI: `require("@tron-cold-sign/core")` (CJS `dist/index.js`).
+
+The app loads a **`buffer`** polyfill before other modules (`client/src/buffer-polyfill.ts`).
 
 ## Requirements
 
@@ -23,7 +47,7 @@ The client depends on the root package **`tron-cold-sign`**: **`client/package.j
 npm install
 ```
 
-Installs the root package and the **`client`** workspace (hoisted `node_modules` at the repo root).
+Installs the root package and workspaces (hoisted `node_modules` at the repo root).
 
 ## Commands
 
@@ -31,23 +55,23 @@ Installs the root package and the **`client`** workspace (hoisted `node_modules`
 |--------|---------|
 | `node generate-wallet.secure.js` | Generate or recover wallet; see `--help` for options. |
 | `node sign-transaction.secure.js` | Sign an unsigned tx JSON offline; see `--help`. |
-| `npm run build:lib` | Bundle `lib/` → `dist/tron-lib-esm.mjs` (browser ESM for the client). |
-| `npm run dev:client` | Runs `build:lib`, then Vite dev server for the React UI (`client/`). |
-| `npm run build:client` | Runs `build:lib`, then production static build → `client/dist/`. |
-| `npm run test:client` | Runs `build:lib`, then Vitest for `client/`. |
-| `npm test` | Jest unit tests (`lib/`, `cli/`). |
-| `npm run test:coverage` | `jest --coverage` — line coverage for `lib/` and `cli/` (see terminal summary and `coverage/`). |
+| `npm run build:core` | Build `packages/core` → `dist/` (CJS + ESM + `.d.ts`). |
+| `npm run dev:client` | Watch `core` + Vite dev server for the React UI (`client/`). |
+| `npm run build:client` | Production static build → `client/dist/` (runs `build:core` via client `prebuild`). |
+| `npm run test:client` | Vitest for `client/` (runs `build:core` via client `pretest`). |
+| `npm test` | Jest unit tests (`pretest` builds `core` first). |
+| `npm run test:coverage` | `jest --coverage` — line coverage for `packages/core` and `cli/` (see terminal summary and `coverage/`). |
 | `npm run verify` | Compare derived address with TronWeb on a fixed test mnemonic (no live network call required for the check). |
 | `npm run test:all` | Unit tests + `verify`. |
 | `npm run build` | Bundle wallet CLI to `dist/bundle.js` (optional air-gap artifact). |
-| `npm run integrity:write` / `integrity:check` | Maintain / verify `INTEGRITY.sha256` over tracked project files (includes `client/src` sources). |
+| `npm run integrity:write` / `integrity:check` | Maintain / verify `INTEGRITY.sha256` over tracked project files (includes `client/src` and `packages/core/src`). |
 
 By default the wallet CLI prints **non-secret** fields only. Secrets require **`--print-secrets`** (understand the risk: logs, shell history, screenshots).
 
 ## Programmatic use
 
 ```javascript
-const api = require("./lib/index.js");
+const api = require("@tron-cold-sign/core");
 // e.g. api.deriveWalletFromMnemonic, api.compressedPublicKeyToTronAddress, …
 ```
 

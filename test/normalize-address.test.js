@@ -2,7 +2,7 @@
 
 const assert = require("node:assert");
 const path = require("path");
-const { normalizeTronAddress } = require("../lib/tron/transaction/normalize-address.js");
+const { normalizeTronAddress } = require("@tron-cold-sign/core");
 const { GOLDEN_TRON_ADDRESS } = require("./test-constants.js");
 
 test("normalizeTronAddress accepts Base58 and returns canonical Base58", () => {
@@ -42,7 +42,7 @@ test("normalizeTronAddress rejects wrong TRON address version in hex", () => {
 });
 
 test("formatHumanSummary fixture raw-transfer expected lines", () => {
-	const { formatHumanSummary } = require("../lib/tron/transaction/format-summary.js");
+	const { formatHumanSummary } = require("@tron-cold-sign/core");
 	const raw = require(path.join(__dirname, "fixtures", "raw-transfer.json"));
 	const out = formatHumanSummary(raw);
 	assert.match(out, /TransferContract \(TRX\)/);
@@ -54,7 +54,7 @@ test("formatHumanSummary fixture raw-transfer expected lines", () => {
 });
 
 test("formatHumanSummary fixture raw-trigger-transfer TRC20 transfer", () => {
-	const { formatHumanSummary } = require("../lib/tron/transaction/format-summary.js");
+	const { formatHumanSummary } = require("@tron-cold-sign/core");
 	const raw = require(path.join(__dirname, "fixtures", "raw-trigger-transfer.json"));
 	const out = formatHumanSummary(raw);
 	assert.match(out, /TriggerSmartContract/);
@@ -64,7 +64,7 @@ test("formatHumanSummary fixture raw-trigger-transfer TRC20 transfer", () => {
 });
 
 test("formatHumanSummary fixture raw-trigger-transferfrom", () => {
-	const { formatHumanSummary } = require("../lib/tron/transaction/format-summary.js");
+	const { formatHumanSummary } = require("@tron-cold-sign/core");
 	const raw = require(path.join(__dirname, "fixtures", "raw-trigger-transferfrom.json"));
 	const out = formatHumanSummary(raw);
 	assert.match(out, /transferFrom\(address,address,uint256\)/);

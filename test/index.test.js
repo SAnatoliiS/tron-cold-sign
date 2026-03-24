@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("node:assert");
-const api = require("../lib/index.js");
+const api = require("@tron-cold-sign/core");
 
 test("public API re-exports expected symbols", () => {
 	assert.ok(api.CliError);

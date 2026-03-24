@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "prebuild": "npm run build:core --prefix ..",
+    "pretest": "npm run build:core --prefix ..",
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
@@ -13,7 +15,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "tron-cold-sign": "file:..",
+    "@tron-cold-sign/core": "*",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

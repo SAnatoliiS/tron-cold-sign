@@ -1,9 +1,7 @@
 "use strict";
 
 const assert = require("node:assert");
-const {
-	buildUiSummaryFromRawData,
-} = require("../lib/tron/transaction/format-summary.js");
+const { buildUiSummaryFromRawData } = require("@tron-cold-sign/core");
 const { GOLDEN_TRON_ADDRESS } = require("./test-constants.js");
 
 test("buildUiSummaryFromRawData TransferContract", () => {
@@ -67,6 +65,6 @@ test("buildUiSummaryFromRawData throws when contract empty", () => {
 });
 
 test("buildUiSummaryFromRawData exports from index", () => {
-	const api = require("../lib/index.js");
+	const api = require("@tron-cold-sign/core");
 	assert.strictEqual(typeof api.buildUiSummaryFromRawData, "function");
 });

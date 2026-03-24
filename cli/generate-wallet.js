@@ -12,15 +12,13 @@
 
 const fs = require("fs");
 const { CliError } = require("./errors.js");
-const { TRON_DERIVATION_PATH } = require("../lib/tron/constants.js");
 const {
+	TRON_DERIVATION_PATH,
 	decodeTronAddressBase58Checked,
 	encodeTronBase58CheckPayload,
-} = require("../lib/tron/address.js");
-const {
 	deriveWalletFromMnemonic,
 	generateTronWallet,
-} = require("../lib/wallet/derive.js");
+} = require("@tron-cold-sign/core");
 const { readPassphraseInteractive } = require("./passphrase.js");
 
 function readMnemonicFromFile(filePath) {

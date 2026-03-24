@@ -17,7 +17,7 @@ const {
 } = require("../cli/generate-wallet.js");
 const { CliError } = require("../cli/errors.js");
 const passphraseMod = require("../cli/passphrase.js");
-const { deriveWalletFromMnemonic } = require("../lib/wallet/derive.js");
+const { deriveWalletFromMnemonic } = require("@tron-cold-sign/core");
 const {
 	TEST_MNEMONIC,
 	GOLDEN_TRON_ADDRESS,

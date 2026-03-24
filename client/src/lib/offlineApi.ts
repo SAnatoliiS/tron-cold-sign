@@ -1,5 +1,5 @@
-import tronLib from "tron-cold-sign";
-import type { TronColdSignApi } from "tron-cold-sign";
+import tronLib from "@tron-cold-sign/core";
+import type { TronColdSignApi } from "@tron-cold-sign/core";
 
 const {
   generateTronWallet,

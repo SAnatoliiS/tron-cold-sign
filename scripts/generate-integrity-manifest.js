@@ -72,7 +72,10 @@ const TRACKED_FILES = [
 	"scripts/generate-integrity-manifest.js",
 	"scripts/verify-derivation.js",
 	"scripts/verify-integrity.js",
-	...walkJs("lib"),
+	"packages/core/package.json",
+	"packages/core/tsconfig.json",
+	"packages/core/tsup.config.ts",
+	...walkSource("packages/core/src", [".ts"]),
 	...walkJs("cli"),
 	...walkJs("test"),
 	"client/package.json",
@@ -86,8 +89,6 @@ const TRACKED_FILES = [
 	"client/postcss.config.js",
 	"client/tailwind.config.ts",
 	"client/components.json",
-	"scripts/build-lib-esm.mjs",
-	"types/tron-cold-sign.d.ts",
 	...walkSource("client/src", [".ts", ".tsx", ".css"]),
 ].sort();
 

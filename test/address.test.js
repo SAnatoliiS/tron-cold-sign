@@ -3,14 +3,14 @@
 const assert = require("node:assert");
 const bip39 = require("bip39");
 const bip32 = require("bip32");
-const ecc = require("../lib/crypto/ecc-noble.js");
 const {
+	ecc,
 	compressedPublicKeyToTronAddress,
 	decodeTronAddressBase58Checked,
 	tronAddressBase58ToHex,
 	publicKeyUncompressedToTronAddress,
 	encodeTronBase58CheckPayload,
-} = require("../lib/tron/address.js");
+} = require("@tron-cold-sign/core");
 const {
 	TEST_MNEMONIC,
 	GOLDEN_TRON_ADDRESS,

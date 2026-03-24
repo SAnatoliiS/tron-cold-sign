@@ -11,13 +11,15 @@
 const fs = require("fs");
 const readline = require("readline");
 const { CliError } = require("./errors.js");
-const { TRON_DERIVATION_PATH } = require("../lib/tron/constants.js");
-const { deriveWalletFromMnemonic } = require("../lib/wallet/derive.js");
+const {
+	TRON_DERIVATION_PATH,
+	deriveWalletFromMnemonic,
+	signTronTxId,
+	verifyTxIdBinding,
+	formatHumanSummary,
+	normalizeTronAddress,
+} = require("@tron-cold-sign/core");
 const { readPassphraseInteractive } = require("./passphrase.js");
-const { signTronTxId } = require("../lib/tron/transaction/sign-tron-tx-id.js");
-const { verifyTxIdBinding } = require("../lib/tron/transaction/verify-tx-id.js");
-const { formatHumanSummary } = require("../lib/tron/transaction/format-summary.js");
-const { normalizeTronAddress } = require("../lib/tron/transaction/normalize-address.js");
 
 function readMnemonicFromFile(filePath) {
 	const p = String(filePath).trim();

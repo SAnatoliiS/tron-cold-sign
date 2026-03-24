@@ -3,17 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "description": "",
-  "main": "lib/index.js",
-  "types": "./types/tron-cold-sign.d.ts",
-  "exports": {
-    ".": {
-      "types": "./types/tron-cold-sign.d.ts",
-      "import": "./dist/tron-lib-esm.mjs",
-      "require": "./lib/index.js",
-      "default": "./lib/index.js"
-    }
-  },
   "workspaces": [
+    "packages/core",
     "client"
   ],
   "scripts": {
@@ -22,14 +13,15 @@
     "verify": "node scripts/verify-derivation.js",
     "integrity:write": "node scripts/generate-integrity-manifest.js --write",
     "integrity:check": "node scripts/verify-integrity.js",
-    "build:lib": "node scripts/build-lib-esm.mjs",
+    "build:core": "npm run build --workspace=@tron-cold-sign/core",
+    "pretest": "npm run build:core",
     "build": "esbuild cli/generate-wallet.js --bundle --platform=node --outfile=dist/bundle.js",
-    "build:client": "npm run build:lib && npm run build --workspace=tron-cold-sign-client",
-    "dev:client": "npm run build:lib && npm run dev --workspace=tron-cold-sign-client",
+    "build:client": "npm run build --workspace=tron-cold-sign-client",
+    "dev:client": "concurrently -k \"npm run dev --workspace=@tron-cold-sign/core\" \"npm run dev --workspace=tron-cold-sign-client\"",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:all": "jest && node scripts/verify-derivation.js",
-    "test:client": "npm run build:lib && npm run test --workspace=tron-cold-sign-client",
+    "test:client": "npm run test --workspace=tron-cold-sign-client",
     "ci": "npm ci"
   },
   "keywords": [],
@@ -37,16 +29,16 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@noble/hashes": "^2.0.1",
-    "@noble/secp256k1": "^3.0.0",
-    "@scure/base": "^2.0.0",
-    "bip32": "^5.0.1",
-    "bip39": "^3.1.0"
+    "@tron-cold-sign/core": "*"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
+    "@noble/hashes": "^2.0.1",
     "babel-jest": "^29.7.0",
+    "bip32": "^5.0.1",
+    "bip39": "^3.1.0",
+    "concurrently": "^9.1.2",
     "esbuild": "^0.27.4",
     "jest": "^29.7.0",
     "tronweb": "^6.2.2"

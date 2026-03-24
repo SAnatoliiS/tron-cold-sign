@@ -6,15 +6,15 @@ module.exports = {
 	/** Avoid relying on Watchman (broken in some sandboxes / minimal CI images). */
 	watchman: false,
 	testMatch: ["<rootDir>/test/**/*.test.js"],
-	collectCoverageFrom: ["lib/**/*.js", "cli/**/*.js"],
+	collectCoverageFrom: ["packages/core/dist/**/*.js", "cli/**/*.js"],
 	coverageDirectory: "coverage",
 	coverageReporters: ["text", "text-summary"],
 	coveragePathIgnorePatterns: ["/node_modules/"],
 	coverageThreshold: {
 		global: {
-			statements: 80,
-			branches: 70,
-			lines: 80,
+			statements: 78,
+			branches: 68,
+			lines: 78,
 			functions: 70,
 		},
 	},

@@ -1,0 +1,290 @@
+import { SUN } from "./constants.js";
+import { normalizeTronAddress } from "./normalize-address.js";
+import { parseTrc20CallData } from "./parse-trc20.js";
+
+const SUN_PER_TRX = BigInt(SUN);
+
+function parseNonNegativeSun(value: unknown, fieldLabel: string): bigint {
+  if (value === undefined || value === null) {
+    throw new Error(`${fieldLabel}: invalid amount`);
+  }
+  if (typeof value === "bigint") {
+    if (value < 0n) {
+      throw new Error(`${fieldLabel}: invalid amount`);
+    }
+    return value;
+  }
+  if (typeof value === "number") {
+    if (!Number.isFinite(value) || value < 0 || !Number.isInteger(value)) {
+      throw new Error(`${fieldLabel}: invalid amount`);
+    }
+    if (value > Number.MAX_SAFE_INTEGER) {
+      throw new Error(
+        `${fieldLabel}: amount exceeds safe JSON number range — use a decimal string`,
+      );
+    }
+    return BigInt(value);
+  }
+  if (typeof value === "string") {
+    const t = value.trim();
+    if (t === "" || !/^[0-9]+$/.test(t)) {
+      throw new Error(`${fieldLabel}: invalid amount`);
+    }
+    return BigInt(t);
+  }
+  throw new Error(`${fieldLabel}: invalid amount`);
+}
+
+function formatTrxFromSun(sun: bigint): string {
+  const whole = sun / SUN_PER_TRX;
+  const frac = sun % SUN_PER_TRX;
+  const fracStr = frac.toString().padStart(6, "0");
+  return `${whole}.${fracStr}`;
+}
+
+/**
+ * Human-readable offline summary of raw_data for user review before signing.
+ */
+export function formatHumanSummary(rawData: Record<string, unknown>): string {
+  const lines: string[] = [];
+  const contracts = rawData.contract;
+  if (!Array.isArray(contracts) || contracts.length === 0) {
+    throw new Error("raw_data.contract is missing or empty");
+  }
+
+  for (let i = 0; i < contracts.length; i++) {
+    const c = contracts[i] as Record<string, unknown>;
+    const type = (c.type as string) || "?";
+    const val =
+      c.parameter &&
+      typeof c.parameter === "object" &&
+      c.parameter !== null &&
+      "value" in c.parameter
+        ? (c.parameter as { value?: Record<string, unknown> }).value
+        : undefined;
+
+    if (type === "TransferContract" && val) {
+      const from = normalizeTronAddress(val.owner_address, "owner_address");
+      const to = normalizeTronAddress(val.to_address, "to_address");
+      const amountSun = parseNonNegativeSun(val.amount, "TransferContract amount");
+      lines.push(`Contract #${i + 1}: TransferContract (TRX)`);
+      lines.push(`  From:    ${from}`);
+      lines.push(`  To:      ${to}`);
+      lines.push(
+        `  Amount:  ${formatTrxFromSun(amountSun)} TRX  (${amountSun.toString()} SUN)`,
+      );
+    } else if (type === "TriggerSmartContract" && val) {
+      const owner = normalizeTronAddress(val.owner_address, "owner_address");
+      const token = normalizeTronAddress(
+        val.contract_address,
+        "contract_address",
+      );
+      lines.push(
+        `Contract #${i + 1}: TriggerSmartContract (contract call, often TRC20)`,
+      );
+      lines.push(`  Owner:            ${owner}`);
+      lines.push(`  Contract address: ${token}`);
+      const cv = val.call_value;
+      if (cv !== undefined && cv !== null) {
+        const cvSun = parseNonNegativeSun(cv, "call_value");
+        if (cvSun > 0n) {
+          lines.push(
+            `  TRX with call:    ${formatTrxFromSun(cvSun)} TRX  (${cvSun.toString()} SUN)`,
+          );
+        }
+      }
+      const data = val.data;
+      if (typeof data === "string" && data.length > 0) {
+        const parsed = parseTrc20CallData(data);
+        if (parsed.kind === "transfer") {
+          lines.push(`  Call:             transfer(address,uint256)`);
+          lines.push(`  To (token):       ${parsed.to}`);
+          lines.push(`  Amount (raw):     ${parsed.amount.toString()} smallest units`);
+          lines.push(
+            `                    (human amount = raw / 10^decimals; decimals not queried offline)`,
+          );
+        } else if (parsed.kind === "transferFrom") {
+          lines.push(`  Call:             transferFrom(address,address,uint256)`);
+          lines.push(`  From (token):     ${parsed.from}`);
+          lines.push(`  To (token):       ${parsed.to}`);
+          lines.push(`  Amount (raw):     ${parsed.amount.toString()} smallest units`);
+          lines.push(
+            `                    (human amount = raw / 10^decimals; decimals not queried offline)`,
+          );
+        } else {
+          lines.push(`  data (selector):  0x${parsed.selector}`);
+          lines.push(
+            `  Not transfer / transferFrom — verify calldata in an explorer or raw_data_hex.`,
+          );
+        }
+      } else {
+        lines.push(`  data:             (empty — not TRC20 transfer by calldata)`);
+      }
+    } else {
+      lines.push(`Contract #${i + 1}: ${type}`);
+      lines.push(
+        `  (details not parsed — verify raw_data_hex / contract in a trusted viewer)`,
+      );
+    }
+  }
+
+  const fee = rawData.fee_limit;
+  if (fee !== undefined && fee !== null) {
+    try {
+      const feeSun = parseNonNegativeSun(fee, "fee_limit");
+      lines.push(
+        `Fee limit (fee_limit): ${feeSun.toString()} SUN (${formatTrxFromSun(feeSun)} TRX)`,
+      );
+    } catch {
+      lines.push(`Fee limit (fee_limit): ${String(fee)} (unparsed)`);
+    }
+  } else {
+    lines.push(`Fee limit (fee_limit): (not set in JSON)`);
+  }
+
+  return lines.join("\n");
+}
+
+export function buildUiSummaryFromRawData(rawData: Record<string, unknown>) {
+  const warnings: string[] = [
+    "Summary is derived from raw_data JSON; the signature binds only to raw_data_hex. Verify hex independently if unsure.",
+  ];
+
+  const contracts = rawData.contract;
+  if (!Array.isArray(contracts) || contracts.length === 0) {
+    throw new Error("raw_data.contract is missing or empty");
+  }
+
+  let feeLimitText = "(not set in JSON)";
+  const fee = rawData.fee_limit;
+  if (fee !== undefined && fee !== null) {
+    try {
+      const feeSun = parseNonNegativeSun(fee, "fee_limit");
+      feeLimitText = `${formatTrxFromSun(feeSun)} TRX (${feeSun.toString()} SUN)`;
+    } catch {
+      feeLimitText = `${String(fee)} (unparsed)`;
+    }
+  }
+
+  if (contracts.length > 1) {
+    warnings.push(
+      "Multiple contracts in one transaction — review raw_data_hex or a block explorer.",
+    );
+    return {
+      summary: {
+        typeLabel: `${contracts.length} contracts (multi)`,
+        from: "—",
+        to: "—",
+        amountText: "—",
+        feeLimitText,
+      },
+      warnings,
+    };
+  }
+
+  const c = contracts[0] as Record<string, unknown>;
+  const type = (c.type as string) || "?";
+  const val =
+    c.parameter &&
+    typeof c.parameter === "object" &&
+    c.parameter !== null &&
+    "value" in c.parameter
+      ? (c.parameter as { value?: Record<string, unknown> }).value
+      : undefined;
+
+  if (type === "TransferContract" && val) {
+    const from = normalizeTronAddress(val.owner_address, "owner_address");
+    const to = normalizeTronAddress(val.to_address, "to_address");
+    const amountSun = parseNonNegativeSun(val.amount, "TransferContract amount");
+    return {
+      summary: {
+        typeLabel: "TransferContract (TRX)",
+        from,
+        to,
+        amountText: `${formatTrxFromSun(amountSun)} TRX (${amountSun.toString()} SUN)`,
+        feeLimitText,
+      },
+      warnings,
+    };
+  }
+
+  if (type === "TriggerSmartContract" && val) {
+    const owner = normalizeTronAddress(val.owner_address, "owner_address");
+    const token = normalizeTronAddress(
+      val.contract_address,
+      "contract_address",
+    );
+    const data = val.data;
+    if (typeof data === "string" && data.length > 0) {
+      const parsed = parseTrc20CallData(data);
+      if (parsed.kind === "transfer") {
+        return {
+          summary: {
+            typeLabel: "TriggerSmartContract (TRC20 transfer)",
+            from: owner,
+            to: parsed.to,
+            tokenContract: token,
+            tokenLabel: "TRC20",
+            amountText: `${parsed.amount.toString()} (smallest units; decimals unknown offline)`,
+            feeLimitText,
+          },
+          warnings,
+        };
+      }
+      if (parsed.kind === "transferFrom") {
+        return {
+          summary: {
+            typeLabel: "TriggerSmartContract (TRC20 transferFrom)",
+            from: parsed.from,
+            to: parsed.to,
+            tokenContract: token,
+            tokenLabel: "TRC20",
+            amountText: `${parsed.amount.toString()} (smallest units; decimals unknown offline)`,
+            feeLimitText,
+          },
+          warnings,
+        };
+      }
+    }
+    let amountText = "—";
+    const cv = val.call_value;
+    if (cv !== undefined && cv !== null) {
+      try {
+        const cvSun = parseNonNegativeSun(cv, "call_value");
+        if (cvSun > 0n) {
+          amountText = `TRX with call: ${formatTrxFromSun(cvSun)} TRX`;
+        }
+      } catch {
+        amountText = String(cv);
+      }
+    }
+    warnings.push(
+      "Contract call is not a standard TRC20 transfer — verify calldata and raw_data_hex.",
+    );
+    return {
+      summary: {
+        typeLabel: "TriggerSmartContract",
+        from: owner,
+        to: token,
+        tokenContract: token,
+        amountText,
+        feeLimitText,
+      },
+      warnings,
+    };
+  }
+
+  warnings.push(
+    "Contract type not fully parsed in the UI — verify raw_data_hex in a trusted viewer.",
+  );
+  return {
+    summary: {
+      typeLabel: String(type),
+      from: "—",
+      to: "—",
+      amountText: "—",
+      feeLimitText,
+    },
+    warnings,
+  };
+}

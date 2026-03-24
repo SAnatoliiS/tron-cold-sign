@@ -9,12 +9,16 @@ jest.mock("../cli/passphrase.js", () => ({
 }));
 
 let capturedPriv;
-jest.mock("../lib/tron/transaction/sign-tron-tx-id.js", () => ({
-	signTronTxId: jest.fn((_txId, priv) => {
-		capturedPriv = priv;
-		throw new Error("sign failed");
-	}),
-}));
+jest.mock("@tron-cold-sign/core", () => {
+	const actual = jest.requireActual("@tron-cold-sign/core");
+	return {
+		...actual,
+		signTronTxId: jest.fn((_txId, priv) => {
+			capturedPriv = priv;
+			throw new Error("sign failed");
+		}),
+	};
+});
 
 const assert = require("node:assert");
 const fs = require("node:fs");

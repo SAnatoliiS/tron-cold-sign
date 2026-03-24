@@ -1,0 +1,33 @@
+{
+  "name": "@tron-cold-sign/core",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TRON cold wallet crypto (BIP39/BIP32, signing) — shared by Node CLI and browser client",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.0.1",
+    "@noble/secp256k1": "^3.0.0",
+    "@scure/base": "^2.0.0",
+    "bip32": "^5.0.1",
+    "bip39": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.16.5",
+    "tsup": "^8.3.5",
+    "typescript": "^5.8.3"
+  }
+}
