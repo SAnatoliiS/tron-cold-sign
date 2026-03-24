@@ -1,6 +1,6 @@
 "use strict";
 
-jest.mock("../src/cli/passphrase.js", () => ({
+jest.mock("../cli/passphrase.js", () => ({
 	readPassphraseInteractive: jest.fn(() => Promise.resolve("")),
 }));
 
@@ -14,8 +14,8 @@ const {
 	parseArgs,
 	printHelp,
 	main,
-} = require("../src/cli/sign-transaction.js");
-const { CliError } = require("../src/cli/errors.js");
+} = require("../cli/sign-transaction.js");
+const { CliError } = require("../cli/errors.js");
 const {
 	TEST_MNEMONIC,
 	GOLDEN_TRON_ADDRESS,

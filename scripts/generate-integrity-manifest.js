@@ -45,7 +45,8 @@ const TRACKED_FILES = [
 	"scripts/generate-integrity-manifest.js",
 	"scripts/verify-derivation.js",
 	"scripts/verify-integrity.js",
-	...walkJs("src"),
+	...walkJs("lib"),
+	...walkJs("cli"),
 	...walkJs("test"),
 ].sort();
 

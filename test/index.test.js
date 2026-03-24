@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("node:assert");
-const api = require("../src/index.js");
+const api = require("../lib/index.js");
 
 test("public API re-exports expected symbols", () => {
 	assert.ok(api.CliError);

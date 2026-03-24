@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("node:assert");
-const ecc = require("../src/crypto/ecc-noble.js");
+const ecc = require("../lib/crypto/ecc-noble.js");
 
 test("pointFromScalar returns null for invalid secret", () => {
 	assert.strictEqual(ecc.pointFromScalar(Buffer.alloc(32, 0)), null);

@@ -4,12 +4,12 @@
  * Ensures private key buffer is zeroed even when signTronTxId throws.
  */
 
-jest.mock("../src/cli/passphrase.js", () => ({
+jest.mock("../cli/passphrase.js", () => ({
 	readPassphraseInteractive: jest.fn(() => Promise.resolve("")),
 }));
 
 let capturedPriv;
-jest.mock("../src/tron/transaction/sign-tron-tx-id.js", () => ({
+jest.mock("../lib/tron/transaction/sign-tron-tx-id.js", () => ({
 	signTronTxId: jest.fn((_txId, priv) => {
 		capturedPriv = priv;
 		throw new Error("sign failed");
@@ -22,7 +22,7 @@ const os = require("node:os");
 const path = require("node:path");
 const readline = require("readline");
 const { sha256 } = require("@noble/hashes/sha2.js");
-const { main } = require("../src/cli/sign-transaction.js");
+const { main } = require("../cli/sign-transaction.js");
 const {
 	TEST_MNEMONIC,
 	GOLDEN_TRON_ADDRESS,

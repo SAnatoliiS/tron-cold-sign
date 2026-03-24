@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("node:assert");
-const { utf8PopLastChar } = require("../src/cli/passphrase.js");
+const { utf8PopLastChar } = require("../cli/passphrase.js");
 
 test("utf8PopLastChar empty buffer unchanged", () => {
 	const b = Buffer.alloc(0);

@@ -2,12 +2,12 @@
 
 const assert = require("node:assert");
 const { sha256 } = require("@noble/hashes/sha2.js");
-const { signTronTxId } = require("../src/tron/transaction/sign-tron-tx-id.js");
+const { signTronTxId } = require("../lib/tron/transaction/sign-tron-tx-id.js");
 const {
 	verifyTxIdBinding,
 	MAX_RAW_DATA_HEX_LENGTH,
-} = require("../src/tron/transaction/verify-tx-id.js");
-const { parseTrc20CallData } = require("../src/tron/transaction/parse-trc20.js");
+} = require("../lib/tron/transaction/verify-tx-id.js");
+const { parseTrc20CallData } = require("../lib/tron/transaction/parse-trc20.js");
 
 test("verifyTxIdBinding accepts matching txID and raw_data_hex", () => {
 	const rawHex = "aa".repeat(32);

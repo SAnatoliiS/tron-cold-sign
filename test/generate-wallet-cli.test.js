@@ -1,6 +1,6 @@
 "use strict";
 
-jest.mock("../src/cli/passphrase.js", () => ({
+jest.mock("../cli/passphrase.js", () => ({
 	readPassphraseInteractive: jest.fn(() => Promise.resolve("")),
 }));
 
@@ -14,10 +14,10 @@ const {
 	printHelp,
 	outputWallet,
 	main,
-} = require("../src/cli/generate-wallet.js");
-const { CliError } = require("../src/cli/errors.js");
-const passphraseMod = require("../src/cli/passphrase.js");
-const { deriveWalletFromMnemonic } = require("../src/wallet/derive.js");
+} = require("../cli/generate-wallet.js");
+const { CliError } = require("../cli/errors.js");
+const passphraseMod = require("../cli/passphrase.js");
+const { deriveWalletFromMnemonic } = require("../lib/wallet/derive.js");
 const {
 	TEST_MNEMONIC,
 	GOLDEN_TRON_ADDRESS,

@@ -3,8 +3,8 @@
 const assert = require("node:assert");
 const { spawnSync } = require("node:child_process");
 const path = require("path");
-const { parseArgs } = require("../src/cli/generate-wallet.js");
-const { CliError } = require("../src/cli/errors.js");
+const { parseArgs } = require("../cli/generate-wallet.js");
+const { CliError } = require("../cli/errors.js");
 
 const repoRoot = path.join(__dirname, "..");
 

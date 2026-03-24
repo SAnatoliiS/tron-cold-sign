@@ -8,9 +8,9 @@
 
 const bip39 = require("bip39");
 const bip32 = require("bip32");
-const ecc = require("../src/crypto/ecc-noble.js");
+const ecc = require("../lib/crypto/ecc-noble.js");
 const { TronWeb } = require("tronweb");
-const { compressedPublicKeyToTronAddress } = require("../src/tron/address.js");
+const { compressedPublicKeyToTronAddress } = require("../lib/tron/address.js");
 
 const TEST_MNEMONIC =
 	"legal winner thank year wave sausage worth useful legal winner thank yellow";
@@ -32,7 +32,7 @@ if (!reference || reference === false) {
 
 if (ours !== reference) {
 	console.error("verify: address mismatch");
-	console.error("  src/tron/address:", ours);
+	console.error("  lib/tron/address:", ours);
 	console.error("  tronweb:         ", reference);
 	process.exit(1);
 }

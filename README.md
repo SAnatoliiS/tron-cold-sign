@@ -1,13 +1,23 @@
 # TronOffline
 
-Offline tools for a **TRON** HD wallet ([BIP39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) / [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki), [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki) coin type **195**, [SLIP-0044](https://github.com/satoshilabs/slips/blob/master/slip-0044.md)) and for **signing unsigned transactions** without contacting the network. Intended for cold / air-gapped use.
+Offline tools for a **TRON** HD wallet ([BIP39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) / [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki), [BIP44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki) coin type **195**, [SLIP-0044](https://github.com/satoshilabs/slips/blob/master/slip-0044.md)) and for **signing unsigned transactions** without contacting the network. Intended for cold / air-gapped use. The long-term UI is a **static offline site** (React/Vite under **`client/`**); **`lib/`** holds shared crypto logic usable from Node or the browser.
 
 ## Repository layout
 
-- **`src/`** — libraries and CLI implementation.
+- **`lib/`** — wallet / TRON / signing logic (no Node-only APIs); import from the future Vite app via an alias to this folder (see below).
+- **`cli/`** — Node CLIs (`generate-wallet`, `sign-transaction`, interactive passphrase).
+- **`client/`** — add your **Vite + React** app here (`npm create vite@latest`, etc.). Production build output is typically `client/dist/` for static hosting or opening offline.
 - **`generate-wallet.secure.js`**, **`sign-transaction.secure.js`** — thin entrypoints at the repo root.
 - **`scripts/`** — integrity manifest and TronWeb regression check (dev-only).
 - **`test/`** — unit tests ([Jest](https://jestjs.io/)); `babel.config.cjs` is only for the test runner (ESM deps such as `@noble/*` / `@scure/*`), not for shipping code.
+
+### Wiring Vite to `lib/`
+
+In `client/vite.config.ts` (or `.js`), point an alias at the repo root `lib` directory, for example:
+
+`resolve.alias: { "@tronoffline": fileURLToPath(new URL("../lib", import.meta.url)) }`
+
+Then from React: `import { deriveWalletFromMnemonic, signTronTxId } from "@tronoffline/index.js"`. You may need a `buffer` polyfill in the browser bundle depending on dependency versions.
 
 ## Requirements
 
@@ -24,7 +34,7 @@ npm install
 | `node generate-wallet.secure.js` | Generate or recover wallet; see `--help` for options. |
 | `node sign-transaction.secure.js` | Sign an unsigned tx JSON offline; see `--help`. |
 | `npm test` | Unit tests. |
-| `npm run test:coverage` | `jest --coverage` — line coverage for `src/` (see terminal summary and `coverage/`). |
+| `npm run test:coverage` | `jest --coverage` — line coverage for `lib/` and `cli/` (see terminal summary and `coverage/`). |
 | `npm run verify` | Compare derived address with TronWeb on a fixed test mnemonic (no live network call required for the check). |
 | `npm run test:all` | Unit tests + `verify`. |
 | `npm run build` | Bundle wallet CLI to `dist/bundle.js` (optional air-gap artifact). |
@@ -35,7 +45,7 @@ By default the wallet CLI prints **non-secret** fields only. Secrets require **`
 ## Programmatic use
 
 ```javascript
-const api = require("./src/index.js");
+const api = require("./lib/index.js");
 // e.g. api.deriveWalletFromMnemonic, api.compressedPublicKeyToTronAddress, …
 ```
 
