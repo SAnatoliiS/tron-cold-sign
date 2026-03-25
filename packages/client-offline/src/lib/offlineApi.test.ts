@@ -14,7 +14,7 @@ const { deriveWalletFromMnemonic } = tronLib as TronColdSignApi;
 
 const require = createRequire(import.meta.url);
 const { TEST_MNEMONIC, GOLDEN_TRON_ADDRESS } = require(
-  "../../../test/test-constants.js",
+  "../../../../test/test-constants.js",
 );
 
 /** Same mnemonic, different index — valid Base58, not m/44'/195'/0'/0/0. */

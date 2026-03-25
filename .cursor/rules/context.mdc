@@ -5,7 +5,7 @@ alwaysApply: true
 
 Контекст: оффлайн генерация TRON кошелька (TRC20) и статический оффлайн-сайт для генерации/подписи транзакций.
 
-Структура репозитория: **`packages/core`** (`@tron-cold-sign/core`) — общая крипто/TRON логика на TypeScript; сборка через **`tsup`** в **`packages/core/dist/`** (CJS `index.js`, ESM `index.mjs`, типы `index.d.ts`). Корневой **`npm run dev:client`** — **`concurrently`**: watch `core` + Vite в **`client/`**; **`npm run build:client`** / **`test:client`** вызывают **`build:core`** через **`prebuild`** / **`pretest`** у клиента; после **`npm install`** у **`packages/core`** выполняется **`prepare`** → сборка. **`client/`** — workspace `tron-cold-sign-client` (React/Vite): `client/src/lib/offlineApi.ts` импортирует **`@tron-cold-sign/core`**. Зависимость в `package.json` — **`"*"`** (разрешение в локальный workspace-пакет); при желании эквивалентно **`workspace:*`** (npm 7.14+). Полифилл **`buffer`** — `client/src/buffer-polyfill.ts`.
+Структура репозитория: **`packages/core`** (`@tron-cold-sign/core`) — общая крипто/TRON логика на TypeScript; сборка через **`tsup`** в **`packages/core/dist/`** (CJS `index.js`, ESM `index.mjs`, типы `index.d.ts`). Корневой **`npm run dev:client-offline`** — **`concurrently`**: watch `core` + Vite в **`packages/client-offline/`**; **`npm run build:client-offline`** / **`npm run test:client-offline`** вызывают **`build:core`** через **`prebuild`** / **`pretest`** у клиента; после **`npm install`** у **`packages/core`** выполняется **`prepare`** → сборка. **`packages/client-offline/`** — workspace `tron-cold-sign-offline-client` (React/Vite): `packages/client-offline/src/lib/offlineApi.ts` импортирует **`@tron-cold-sign/core`**. Зависимость в `package.json` — **`"*"`** (разрешение в локальный workspace-пакет); при желании эквивалентно **`workspace:*`** (npm 7.14+). Полифилл **`buffer`** — `packages/client-offline/src/buffer-polyfill.ts`.
 
 🎯 Цель
 
@@ -115,4 +115,4 @@ TRON address (Base58): ...
 
 Проверка валидности seed
 
-Тесты: **`npm run test:coverage`** (корень) — Jest + покрытие `packages/core` и `cli/`; **`npm run test:coverage:client`** — Vitest + покрытие `client/` (перед прогоном собирается `core`).
+Тесты: **`npm run test:coverage`** (корень) — Jest + покрытие `packages/core` и `cli/`; **`npm run test:coverage:client-offline`** — Vitest + покрытие `packages/client-offline/` (перед прогоном собирается `core`).

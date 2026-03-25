@@ -7,7 +7,7 @@
     "packages/core",
     "packages/core-online",
     "packages/client-online",
-    "client"
+    "packages/client-offline"
   ],
   "scripts": {
     "generate": "node generate-wallet.secure.js",
@@ -18,17 +18,17 @@
     "build:core": "npm run build --workspace=@tron-cold-sign/core",
     "pretest": "npm run build:core",
     "build": "esbuild cli/generate-wallet.js --bundle --platform=node --outfile=dist/bundle.js",
-    "build:client": "npm run build --workspace=tron-cold-sign-client",
+    "build:client-offline": "npm run build --workspace=tron-cold-sign-offline-client",
     "build:client-online": "npm run build --workspace=tron-cold-sign-online-client",
-    "dev:client": "concurrently -k \"npm run dev --workspace=@tron-cold-sign/core\" \"npm run dev --workspace=tron-cold-sign-client\"",
+    "dev:client-offline": "concurrently -k \"npm run dev --workspace=@tron-cold-sign/core\" \"npm run dev --workspace=tron-cold-sign-offline-client\"",
     "dev:client-online": "concurrently -k \"npm run dev --workspace=@tron-cold-sign/core\" \"npm run dev --workspace=@tron-cold-sign/core-online\" \"npm run dev --workspace=tron-cold-sign-online-client\"",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:all": "jest && node scripts/verify-derivation.js",
     "test:core-online": "npm run test --workspace=@tron-cold-sign/core-online",
     "test:coverage:core-online": "npm run test:coverage --workspace=@tron-cold-sign/core-online",
-    "test:client": "npm run test --workspace=tron-cold-sign-client",
-    "test:coverage:client": "npm run test:coverage --workspace=tron-cold-sign-client",
+    "test:client-offline": "npm run test --workspace=tron-cold-sign-offline-client",
+    "test:coverage:client-offline": "npm run test:coverage --workspace=tron-cold-sign-offline-client",
     "test:client-online": "npm run test --workspace=tron-cold-sign-online-client",
     "test:coverage:client-online": "npm run test:coverage --workspace=tron-cold-sign-online-client",
     "ci": "npm ci"
