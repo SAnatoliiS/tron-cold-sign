@@ -8,7 +8,7 @@ Monorepo **`workspaces`**: **`packages/core`**, **`client`**.
 
 - **`packages/core`** (`@tron-cold-sign/core`) — wallet / TRON / signing logic (TypeScript). Built with **`tsup`** to **`dist/`**: `index.js` (CJS for Node), `index.mjs` (ESM for Vite), `index.d.ts` (types). The **`core`** package does not use the root **`npm run build`** (that command is a separate optional **esbuild** bundle of the wallet CLI → `dist/bundle.js`).
 - **`cli/`** — Node CLIs (`generate-wallet`, `sign-transaction`, interactive passphrase).
-- **`client/`** — Vite + React UI (`tron-cold-sign-client` workspace). Depends on **`@tron-cold-sign/core`** as **`"*"`** (в режиме workspaces npm подставляет локальный `packages/core`; то же можно записать как **`workspace:*`**, если ваш `npm install` принимает этот протокол — npm 7.14+). Static build: `client/dist/` (open offline or host as static files).
+- **`client/`** — Vite + React UI (`tron-cold-sign-client` workspace). Depends on **`@tron-cold-sign/core`** as **`"*"`** (в режиме workspaces npm подставляет локальный `packages/core`; то же можно записать как **`workspace:*`**, если ваш `npm install` принимает этот протокол — npm 7.14+). Production build emits **`client/dist/index.html`** only (single inlined bundle; `public/` is not copied into `dist`).
 - **`generate-wallet.secure.js`**, **`sign-transaction.secure.js`** — thin entrypoints at the repo root.
 - **`scripts/`** — integrity manifest and TronWeb regression check (dev-only).
 - **`test/`** — unit tests ([Jest](https://jestjs.io/)); `babel.config.cjs` is only for the test runner (ESM deps such as `@noble/*` / `@scure/*`), not for shipping code.
@@ -20,7 +20,7 @@ Monorepo **`workspaces`**: **`packages/core`**, **`client`**.
 ### Client workflow (no manual `build:lib`)
 
 - **`npm run dev:client`** (repo root) runs **`concurrently`**: `tsup --watch` in **`packages/core`** and the Vite dev server in **`client/`**.
-- **`npm run build:client`** runs **`vite build`** in the client workspace; the client’s **`prebuild`** runs **`npm run build:core`** so the core package is built before the static bundle.
+- **`npm run build:client`** runs **`vite build`** in the client workspace; the client’s **`prebuild`** runs **`npm run build:core`** so the core package is built before the static bundle. The client uses **`vite-plugin-singlefile`**, so **`client/dist/index.html`** inlines the app JS/CSS (one large HTML). You can open it via **`file://`**; a plain Vite build without that plugin leaves separate **`assets/*.js`** chunks, which **do not load** from `file://` in typical browsers (ES module `src` restrictions).
 - **`npm run test:client`** runs Vitest; the client’s **`pretest`** runs **`build:core`** first.
 - After **`npm install`**, **`packages/core`** runs **`prepare`** → **`npm run build`**, so `dist/` exists for tools that expect a built `core` (first clone / CI).
 

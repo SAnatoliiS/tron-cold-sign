@@ -5,6 +5,7 @@
   "description": "",
   "workspaces": [
     "packages/core",
+    "packages/online-core",
     "client"
   ],
   "scripts": {
@@ -21,6 +22,8 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:all": "jest && node scripts/verify-derivation.js",
+    "test:online-core": "npm run test --workspace=@tron-cold-sign/online-core",
+    "test:coverage:online-core": "npm run test:coverage --workspace=@tron-cold-sign/online-core",
     "test:client": "npm run test --workspace=tron-cold-sign-client",
     "test:coverage:client": "npm run test:coverage --workspace=tron-cold-sign-client",
     "ci": "npm ci"

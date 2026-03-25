@@ -1,0 +1,37 @@
+{
+  "name": "@tron-cold-sign/online-core",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Online-only TRON helpers: unsigned TRX transfer creation and broadcast (TronWeb)",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "npm run build --workspace=@tron-cold-sign/core --prefix ../..",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepare": "npm run build",
+    "pretest": "npm run build --workspace=@tron-cold-sign/core --prefix ../..",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@tron-cold-sign/core": "*",
+    "tronweb": "^6.2.2"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.2.4",
+    "@types/node": "^22.16.5",
+    "tsup": "^8.3.5",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
