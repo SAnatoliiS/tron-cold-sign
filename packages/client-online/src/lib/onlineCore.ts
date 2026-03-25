@@ -5,7 +5,7 @@ import {
   isValidTronAddress as isValidTronAddressReal,
   type UnsignedTransaction,
   type SignedTransaction,
-} from "@tron-cold-sign/online-core";
+} from "@tron-cold-sign/core-online";
 
 export type { UnsignedTransaction, SignedTransaction };
 

@@ -1,5 +1,5 @@
 {
-  "name": "@tron-cold-sign/online-core",
+  "name": "@tron-cold-sign/core-online",
   "version": "1.0.0",
   "private": true,
   "description": "Online-only TRON helpers: unsigned TRX transfer creation and broadcast (TronWeb)",

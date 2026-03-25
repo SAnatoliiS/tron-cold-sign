@@ -17,7 +17,7 @@ export default defineConfig({
       ignored: [
         "**/node_modules/**",
         "!**/node_modules/@tron-cold-sign/core/**",
-        "!**/node_modules/@tron-cold-sign/online-core/**",
+        "!**/node_modules/@tron-cold-sign/core-online/**",
       ],
     },
   },
@@ -30,7 +30,7 @@ export default defineConfig({
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
   optimizeDeps: {
-    exclude: ["@tron-cold-sign/core", "@tron-cold-sign/online-core"],
+    exclude: ["@tron-cold-sign/core", "@tron-cold-sign/core-online"],
     include: ["buffer"],
   },
 });
