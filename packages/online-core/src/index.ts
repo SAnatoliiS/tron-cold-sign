@@ -1,9 +1,11 @@
 export {
   createUnsignedTransaction,
+  createUnsignedTrc20Transfer,
   isValidTronAddress,
   assertValidAmount,
   type UnsignedTransaction,
   type CreateUnsignedTransactionParams,
+  type CreateUnsignedTrc20TransferParams,
 } from "./createUnsignedTransaction.js";
 
 export {

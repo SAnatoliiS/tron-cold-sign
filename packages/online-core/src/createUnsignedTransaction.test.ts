@@ -2,19 +2,24 @@ import { createHash } from "node:crypto";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { deriveWalletFromMnemonic } from "@tron-cold-sign/core";
 
-const { mockSendTrx } = vi.hoisted(() => ({
+const { mockSendTrx, mockTriggerSmartContract } = vi.hoisted(() => ({
   mockSendTrx: vi.fn(),
+  mockTriggerSmartContract: vi.fn(),
 }));
 
 vi.mock("tronweb", () => ({
   TronWeb: class MockTronWeb {
-    transactionBuilder = { sendTrx: mockSendTrx };
+    transactionBuilder = {
+      sendTrx: mockSendTrx,
+      triggerSmartContract: mockTriggerSmartContract,
+    };
   },
 }));
 
 import {
   assertValidAmount,
   createUnsignedTransaction,
+  createUnsignedTrc20Transfer,
   isValidTronAddress,
 } from "./createUnsignedTransaction.js";
 
@@ -23,6 +28,7 @@ const TEST_MNEMONIC =
 
 beforeEach(() => {
   mockSendTrx.mockReset();
+  mockTriggerSmartContract.mockReset();
 });
 
 describe("assertValidAmount", () => {
@@ -105,5 +111,44 @@ describe("createUnsignedTransaction", () => {
         fullHost: "https://api.shasta.trongrid.io",
       }),
     ).rejects.toThrow(/different/);
+  });
+});
+
+describe("createUnsignedTrc20Transfer", () => {
+  it("strips signature and verifies txID binding", async () => {
+    const rawHex = "bb".repeat(32);
+    const txID = createHash("sha256")
+      .update(Buffer.from(rawHex, "hex"))
+      .digest("hex");
+
+    const nodeTx = {
+      txID,
+      raw_data_hex: rawHex,
+      raw_data: { contract: [] as unknown[] },
+      signature: ["00".repeat(65)],
+    };
+    mockTriggerSmartContract.mockResolvedValue({
+      result: { result: true },
+      transaction: nodeTx,
+    });
+
+    const w0 = deriveWalletFromMnemonic(TEST_MNEMONIC, "", "m/44'/195'/0'/0/0");
+    const w1 = deriveWalletFromMnemonic(TEST_MNEMONIC, "", "m/44'/195'/0'/0/1");
+    const token = deriveWalletFromMnemonic(TEST_MNEMONIC, "", "m/44'/195'/0'/0/2");
+
+    const out = await createUnsignedTrc20Transfer({
+      from: w0.address,
+      to: w1.address,
+      contractAddress: token.address,
+      amountSmallestUnit: "1000000",
+      fullHost: "https://api.shasta.trongrid.io",
+    });
+
+    expect(out).toEqual({
+      txID,
+      raw_data_hex: rawHex,
+      raw_data: { contract: [] },
+    });
+    expect("signature" in out).toBe(false);
   });
 });

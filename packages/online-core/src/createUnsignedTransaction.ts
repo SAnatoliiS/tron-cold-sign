@@ -156,3 +156,111 @@ export async function createUnsignedTransaction(
   });
   return unsigned;
 }
+
+export type CreateUnsignedTrc20TransferParams = {
+  from: string;
+  to: string;
+  contractAddress: string;
+  /** Token amount in smallest units (base-10 integer string, e.g. "1000000" for 1 USDT if decimals=6). */
+  amountSmallestUnit: string;
+  fullHost: string;
+  /** Max fee in SUN for TriggerSmartContract (default 150 TRX = 150_000_000). */
+  feeLimitSun?: number;
+};
+
+function assertValidSmallestUnitString(amount: string): void {
+  const t = String(amount).trim();
+  if (!/^[0-9]+$/.test(t)) {
+    throw new Error("amountSmallestUnit must be a base-10 integer string");
+  }
+  let bi: bigint;
+  try {
+    bi = BigInt(t);
+  } catch {
+    throw new Error("amountSmallestUnit is not a valid integer");
+  }
+  if (bi <= 0n) {
+    throw new Error("amountSmallestUnit must be greater than zero");
+  }
+}
+
+function validateTrc20Addresses(from: string, to: string, contractAddress: string): void {
+  decodeTronAddressBase58Checked(from);
+  decodeTronAddressBase58Checked(to);
+  decodeTronAddressBase58Checked(contractAddress);
+  const f = String(from).trim();
+  const t = String(to).trim();
+  if (f === t) {
+    throw new Error("from and to must be different addresses");
+  }
+}
+
+const DEFAULT_TRC20_FEE_LIMIT_SUN = 150_000_000;
+
+/**
+ * Creates an unsigned TRC20 `transfer(address,uint256)` via TriggerSmartContract.
+ * Strips any signature field and verifies txID = SHA256(raw_data_hex).
+ */
+export async function createUnsignedTrc20Transfer(
+  params: CreateUnsignedTrc20TransferParams,
+): Promise<UnsignedTransaction> {
+  assertValidFullHost(params.fullHost);
+  assertValidSmallestUnitString(params.amountSmallestUnit);
+  validateTrc20Addresses(params.from, params.to, params.contractAddress);
+
+  const from = String(params.from).trim();
+  const to = String(params.to).trim();
+  const contract = String(params.contractAddress).trim();
+  const amount = String(params.amountSmallestUnit).trim();
+  const feeLimit =
+    params.feeLimitSun !== undefined ? params.feeLimitSun : DEFAULT_TRC20_FEE_LIMIT_SUN;
+  if (
+    typeof feeLimit !== "number" ||
+    !Number.isInteger(feeLimit) ||
+    feeLimit <= 0 ||
+    feeLimit > MAX_SUN
+  ) {
+    throw new Error("feeLimitSun must be a positive integer within safe range");
+  }
+
+  const tronWeb = new TronWeb({ fullHost: params.fullHost.trim() });
+
+  let wrapped: {
+    transaction?: TronWebTransaction;
+    result?: { result: boolean; message?: string };
+    Error?: string;
+  };
+  try {
+    wrapped = (await tronWeb.transactionBuilder.triggerSmartContract(
+      contract,
+      "transfer(address,uint256)",
+      { feeLimit },
+      [
+        { type: "address", value: to },
+        { type: "uint256", value: amount },
+      ],
+      from,
+    )) as unknown as typeof wrapped;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to build TRC20 transaction: ${msg}`);
+  }
+
+  if (wrapped.Error) {
+    throw new Error(`Failed to build TRC20 transaction: ${wrapped.Error}`);
+  }
+  if (wrapped.result && wrapped.result.result === false) {
+    const m = wrapped.result.message ?? "unknown";
+    throw new Error(`Contract trigger rejected: ${m}`);
+  }
+  if (!wrapped.transaction) {
+    throw new Error("Node did not return a transaction for TRC20 transfer");
+  }
+
+  const unsigned = stripSignature(wrapped.transaction as unknown as TronWebTransaction);
+  verifyTxIdBinding({
+    txID: unsigned.txID,
+    raw_data_hex: unsigned.raw_data_hex,
+  });
+  return unsigned;
+}
